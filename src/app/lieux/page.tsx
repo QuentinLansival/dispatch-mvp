@@ -126,8 +126,7 @@ export default function LieuxPage() {
     if (key === "address" || key === "city" || key === "postalCode") {
       l.addressText = buildAddressText(l.address, l.postalCode, l.city);
       l.needsPrecision = addressNeedsPrecision(l.address);
-      l.lat = undefined;
-      l.lng = undefined;
+
     }
 
     next[i] = l;
