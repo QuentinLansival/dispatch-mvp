@@ -50,5 +50,26 @@ export async function geocodeWithFallback(
   const CP = (postalCode || "").trim();
   const V = (city || "").trim();
 
-  const attempts = [
-    { parts: [A, `${CP
+  const attempts: Array<{ q: string; level: string }> = [
+    // 1) Adresse complète
+    { q: [A, `${CP} ${V}`.trim(), "Belgique"].filter(Boolean).join(", "), level: "adresse complète" },
+
+    // 2) Rue + ville
+    { q: [A, V, "Belgique"].filter(Boolean).join(", "), level: "rue + ville" },
+
+    // 3) CP + ville
+    { q: [`${CP} ${V}`.trim(), "Belgique"].filter(Boolean).join(", "), level: "code postal" },
+
+    // 4) Ville seule
+    { q: [V, "Belgique"].filter(Boolean).join(", "), level: "ville" },
+  ].filter(a => a.q.replace(/,/g, "").trim().length >= 5); // évite les requêtes vides
+
+  for (const a of attempts) {
+    const res = await callGeocodeApi(a.q);
+    if (res?.lat && res?.lng) {
+      return { lat: res.lat, lng: res.lng, level: a.level };
+    }
+  }
+
+  return null;
+}
