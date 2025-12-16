@@ -72,25 +72,33 @@ export default function LieuxPage() {
   }
 
   async function geocodeOne(code: string) {
-    const next = [...locations];
-    const idx = next.findIndex(l => l.code === code);
-    if (idx < 0) return;
+  const next = [...locations];
+  const idx = next.findIndex(l => l.code === code);
+  if (idx < 0) return;
 
-    const loc = next[idx];
-    if (loc.needsPrecision) {
-      alert("Adresse imprécise → précise l’adresse avant géocodage.");
-      return;
-    }
+  const l = next[idx];
 
-    const res = await geocodeNominatim(loc.addressText);
-    if (!res) {
-      alert("Géocodage impossible. Vérifie l’adresse.");
-      return;
-    }
+  const res = await geocodeWithFallback(
+    l.address,
+    l.postalCode,
+    l.city
+  );
 
-    next[idx] = { ...loc, lat: res.lat, lng: res.lng };
-    save(next);
+  if (!res) {
+    alert("Impossible de géocoder (même en approximation).");
+    return;
   }
+
+  next[idx] = {
+    ...l,
+    lat: res.lat,
+    lng: res.lng,
+    needsPrecision: res.level !== "adresse complète"
+  };
+
+  save(next);
+}
+
 
   async function geocodeAll() {
     setBusy(true);
