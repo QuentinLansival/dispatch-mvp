@@ -73,3 +73,39 @@ export async function geocodeWithFallback(
 
   return null;
 }
+export function cleanAddressForGeocode(address: string): string {
+  let s = (address || "").trim();
+
+  // coupe tout ce qui suit des marqueurs typiques “narratifs”
+  const cutMarkers = ["accès", "acces", "via", "face", "à côté", "a cote", "demander", "mobile", "divers", "plusieurs", "bk", "hauteur"];
+  for (const m of cutMarkers) {
+    const idx = s.toLowerCase().indexOf(m);
+    if (idx > 0) s = s.slice(0, idx).trim();
+  }
+
+  // enlève des préfixes courants
+  s = s.replace(/^base vie\s*:\s*/i, "");
+  s = s.replace(/^poste\s+\d+\s*:\s*/i, "");
+  s = s.replace(/^poste\s*/i, "");
+
+  // normalise tirets multiples
+  s = s.replace(/\s*[-–—]\s*/g, " - ").trim();
+
+  return s;
+}
+
+export function isAddressNarrative(address: string): boolean {
+  const s = (address || "").toLowerCase();
+  return (
+    s.includes("pas d'adresses") ||
+    s.includes("divers") ||
+    s.includes("plusieurs") ||
+    s.includes("demander") ||
+    s.includes("mobile") ||
+    s.includes("accès") ||
+    s.includes("acces") ||
+    s.includes("via") ||
+    s.includes("hauteur") ||
+    s.includes("bk ")
+  );
+}
