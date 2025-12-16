@@ -33,40 +33,22 @@ export function addressNeedsPrecision(address: string): boolean {
     s.includes("voir personne")
   );
 }
+async function callGeocodeApi(q: string): Promise<{ lat: number; lng: number } | null> {
+  const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json?.result ?? null;
+}
+
 export async function geocodeWithFallback(
   address: string,
   postalCode: string,
   city: string
 ): Promise<{ lat: number; lng: number; level: string } | null> {
 
+  const A = (address || "").trim();
+  const CP = (postalCode || "").trim();
+  const V = (city || "").trim();
+
   const attempts = [
-    { q: `${address}, ${postalCode} ${city}, Belgique`, level: "adresse complète" },
-    { q: `${address}, ${city}, Belgique`, level: "rue + ville" },
-    { q: `${postalCode} ${city}, Belgique`, level: "code postal" },
-    { q: `${city}, Belgique`, level: "ville" }
-  ];
-
-  for (const a of attempts) {
-    const q = encodeURIComponent(a.q);
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
-
-    try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
-      if (!res.ok) continue;
-
-      const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-      if (data?.length) {
-        return {
-          lat: Number(data[0].lat),
-          lng: Number(data[0].lon),
-          level: a.level
-        };
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
-}
-
+    { parts: [A, `${CP
